@@ -1,0 +1,244 @@
+{
+  "entities": {
+    "StreamProject": {
+      "title": "StreamProject",
+      "description": "A YouTube stream or local video project imported into ClipPulse for AI viral clipping.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated owner Firebase UID."
+        },
+        "sourceUrl": {
+          "type": "string",
+          "description": "YouTube stream/video URL or local video descriptor."
+        },
+        "videoId": {
+          "type": "string",
+          "description": "Extracted YouTube video ID if applicable."
+        },
+        "sourceTitle": {
+          "type": "string",
+          "description": "Original stream or video title."
+        },
+        "channelName": {
+          "type": "string",
+          "description": "Creator or channel name."
+        },
+        "thumbnailUrl": {
+          "type": "string",
+          "description": "Thumbnail image URL."
+        },
+        "durationSeconds": {
+          "type": "integer",
+          "description": "Total stream/video duration in seconds."
+        },
+        "transcriptText": {
+          "type": "string",
+          "description": "Extracted captions or creator notes for AI analysis."
+        },
+        "targetPlatform": {
+          "type": "string",
+          "enum": ["SHORTS", "REELS", "TIKTOK", "LINKEDIN"],
+          "description": "Primary social platform target."
+        },
+        "clipCount": {
+          "type": "integer",
+          "description": "Number of viral clips generated for this project."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "sourceUrl",
+        "videoId",
+        "sourceTitle",
+        "channelName",
+        "thumbnailUrl",
+        "durationSeconds",
+        "transcriptText",
+        "targetPlatform",
+        "clipCount",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ViralClip": {
+      "title": "ViralClip",
+      "description": "An AI-generated viral short clip with timestamps, kinetic captions, viral title, caption, and hashtags.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated owner Firebase UID."
+        },
+        "projectId": {
+          "type": "string",
+          "description": "Parent StreamProject document ID."
+        },
+        "hookTitle": {
+          "type": "string",
+          "description": "Viral hook title for the clip."
+        },
+        "startTimeSec": {
+          "type": "integer",
+          "description": "Clip start timestamp in seconds."
+        },
+        "endTimeSec": {
+          "type": "integer",
+          "description": "Clip end timestamp in seconds."
+        },
+        "viralScore": {
+          "type": "integer",
+          "description": "Overall AI virality score (0-100)."
+        },
+        "hookScore": {
+          "type": "integer",
+          "description": "Hook strength score (0-100)."
+        },
+        "retentionScore": {
+          "type": "integer",
+          "description": "Audience retention score (0-100)."
+        },
+        "shareabilityScore": {
+          "type": "integer",
+          "description": "Shareability score (0-100)."
+        },
+        "whyViral": {
+          "type": "string",
+          "description": "AI explanation of why this moment has high viral potential."
+        },
+        "viralCaption": {
+          "type": "string",
+          "description": "Social post caption body with CTA."
+        },
+        "hashtags": {
+          "type": "array",
+          "description": "Bounded list of targeted hashtags."
+        },
+        "thumbnailText": {
+          "type": "string",
+          "description": "Short bold cover text overlay."
+        },
+        "pinnedComment": {
+          "type": "string",
+          "description": "Suggested engagement-bait pinned comment."
+        },
+        "captionStyle": {
+          "type": "string",
+          "enum": ["HORMOZI_NEON", "MRBEAST_IMPACT", "MINIMAL_GLASS", "CYBER_PULSE"],
+          "description": "Selected kinetic caption visual theme."
+        },
+        "aspectRatio": {
+          "type": "string",
+          "enum": ["RATIO_9_16", "RATIO_1_1", "RATIO_4_5"],
+          "description": "Target export aspect ratio."
+        },
+        "captionSegments": {
+          "type": "array",
+          "description": "Bounded list of timed kinetic subtitle segments."
+        },
+        "favorite": {
+          "type": "boolean",
+          "description": "Whether the creator starred this clip."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "projectId",
+        "hookTitle",
+        "startTimeSec",
+        "endTimeSec",
+        "viralScore",
+        "hookScore",
+        "retentionScore",
+        "shareabilityScore",
+        "whyViral",
+        "viralCaption",
+        "hashtags",
+        "thumbnailText",
+        "pinnedComment",
+        "captionStyle",
+        "aspectRatio",
+        "captionSegments",
+        "favorite",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "HookLabDraft": {
+      "title": "HookLabDraft",
+      "description": "Saved AI Hook Lab script and viral opener variations.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated owner Firebase UID."
+        },
+        "topic": {
+          "type": "string",
+          "description": "Creator topic or stream moment idea."
+        },
+        "tone": {
+          "type": "string",
+          "description": "Hook style/tone preset."
+        },
+        "generatedHooks": {
+          "type": "string",
+          "description": "Generated AI hook pack content."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "topic",
+        "tone",
+        "generatedHooks",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/projects/{projectId}": {
+      "schema": "StreamProject",
+      "description": "User-owned YouTube stream clipping projects."
+    },
+    "/users/{userId}/projects/{projectId}/clips/{clipId}": {
+      "schema": "ViralClip",
+      "description": "AI-generated viral clips belonging to a stream project."
+    },
+    "/users/{userId}/hookDrafts/{draftId}": {
+      "schema": "HookLabDraft",
+      "description": "Saved AI Hook Lab generations for the authenticated user."
+    }
+  }
+}

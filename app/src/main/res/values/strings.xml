@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">ClipPulse</string>
+    <string name="sign_in_with_google">Sign in with Google</string>
+    <string name="sign_out">Sign out</string>
+    <string name="auth_hero_title">Turn Long Streams Into Viral Shorts</string>
+    <string name="auth_hero_subtitle">AI viral moment detection, kinetic word-by-word captions, hook titles, and platform-ready hashtags synced across devices.</string>
+    <string name="tab_studio">Clip Studio</string>
+    <string name="tab_library">Viral Vault</string>
+    <string name="tab_hook_lab">Hook Lab</string>
+    <string name="youtube_url_hint">Paste YouTube stream or video URL…</string>
+    <string name="fetch_stream">Fetch Stream</string>
+    <string name="pick_local_video">Pick Device Video</string>
+    <string name="generate_viral_clips">Extract Viral Clips with AI</string>
+    <string name="copy_all_pack">Copy Viral Pack</string>
+    <string name="export_srt">Copy .SRT Captions</string>
+    <string name="share_clip_pack">Share Pack</string>
+    <string name="open_youtube_timestamp">Open at Timestamp</string>
+    <string name="remix_with_ai">AI Remix Title, Caption &amp; Tags</string>
+</resources>

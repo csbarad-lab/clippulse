@@ -1,0 +1,6 @@
+{
+  "name": "ClipPulse",
+  "description": "Turn YouTube streams and videos into viral short clips with AI captions, hooks, titles, and hashtags.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

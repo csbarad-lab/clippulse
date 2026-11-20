@@ -1,0 +1,190 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default-deny all paths unless explicitly matched below.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- GLOBAL HARDENED HELPERS ---
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // --- ENTITY VALIDATION BLUEPRINTS ---
+    function isValidProject(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.sourceUrl is string && data.sourceUrl.size() >= 1 && data.sourceUrl.size() <= 500 &&
+             data.videoId is string && data.videoId.size() <= 32 &&
+             data.sourceTitle is string && data.sourceTitle.size() >= 1 && data.sourceTitle.size() <= 200 &&
+             data.channelName is string && data.channelName.size() >= 1 && data.channelName.size() <= 120 &&
+             data.thumbnailUrl is string && data.thumbnailUrl.size() <= 500 &&
+             data.durationSeconds is int && data.durationSeconds >= 0 && data.durationSeconds <= 86400 &&
+             data.transcriptText is string && data.transcriptText.size() <= 12000 &&
+             data.targetPlatform in ['SHORTS', 'REELS', 'TIKTOK', 'LINKEDIN'] &&
+             data.clipCount is int && data.clipCount >= 0 && data.clipCount <= 50;
+    }
+
+    function isValidViralClip(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.projectId is string && isValidId(data.projectId) &&
+             data.hookTitle is string && data.hookTitle.size() >= 1 && data.hookTitle.size() <= 160 &&
+             data.startTimeSec is int && data.startTimeSec >= 0 && data.startTimeSec <= 86400 &&
+             data.endTimeSec is int && data.endTimeSec > data.startTimeSec && data.endTimeSec <= 86400 &&
+             data.viralScore is int && data.viralScore >= 0 && data.viralScore <= 100 &&
+             data.hookScore is int && data.hookScore >= 0 && data.hookScore <= 100 &&
+             data.retentionScore is int && data.retentionScore >= 0 && data.retentionScore <= 100 &&
+             data.shareabilityScore is int && data.shareabilityScore >= 0 && data.shareabilityScore <= 100 &&
+             data.whyViral is string && data.whyViral.size() >= 1 && data.whyViral.size() <= 600 &&
+             data.viralCaption is string && data.viralCaption.size() >= 1 && data.viralCaption.size() <= 2200 &&
+             data.hashtags is list && data.hashtags.size() <= 20 && (data.hashtags.size() == 0 || data.hashtags[0] is string) &&
+             data.thumbnailText is string && data.thumbnailText.size() <= 80 &&
+             data.pinnedComment is string && data.pinnedComment.size() <= 400 &&
+             data.captionStyle in ['HORMOZI_NEON', 'MRBEAST_IMPACT', 'MINIMAL_GLASS', 'CYBER_PULSE'] &&
+             data.aspectRatio in ['RATIO_9_16', 'RATIO_1_1', 'RATIO_4_5'] &&
+             data.captionSegments is list && data.captionSegments.size() <= 30 && (data.captionSegments.size() == 0 || data.captionSegments[0] is map) &&
+             data.favorite is bool;
+    }
+
+    function isValidHookLabDraft(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.topic is string && data.topic.size() >= 1 && data.topic.size() <= 300 &&
+             data.tone is string && data.tone.size() >= 1 && data.tone.size() <= 60 &&
+             data.generatedHooks is string && data.generatedHooks.size() >= 1 && data.generatedHooks.size() <= 6000;
+    }
+
+    // --- COLLECTIONS ---
+    match /users/{userId}/projects/{projectId} {
+      allow get: if isOwner(userId) && isValidId(projectId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(projectId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll([
+                         'userId', 'sourceUrl', 'videoId', 'sourceTitle', 'channelName',
+                         'thumbnailUrl', 'durationSeconds', 'transcriptText', 'targetPlatform',
+                         'clipCount', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'sourceUrl', 'videoId', 'sourceTitle', 'channelName',
+                         'thumbnailUrl', 'durationSeconds', 'transcriptText', 'targetPlatform',
+                         'clipCount', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+                       incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                       isValidProject(incoming());
+
+      allow update: if isOwner(userId) &&
+                       isValidId(projectId) &&
+                       isValidProject(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                       (
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'sourceTitle', 'transcriptText', 'targetPlatform', 'clipCount', 'updatedAt'
+                         ])
+                       );
+
+      allow delete: if isOwner(userId) && isValidId(projectId);
+
+      match /clips/{clipId} {
+        allow get: if isOwner(userId) && isValidId(projectId) && isValidId(clipId);
+        allow list: if isOwner(userId) && isValidId(projectId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(projectId) &&
+                         isValidId(clipId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().projectId == projectId &&
+                         incoming().keys().hasAll([
+                           'userId', 'projectId', 'hookTitle', 'startTimeSec', 'endTimeSec',
+                           'viralScore', 'hookScore', 'retentionScore', 'shareabilityScore',
+                           'whyViral', 'viralCaption', 'hashtags', 'thumbnailText',
+                           'pinnedComment', 'captionStyle', 'aspectRatio', 'captionSegments',
+                           'favorite', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'projectId', 'hookTitle', 'startTimeSec', 'endTimeSec',
+                           'viralScore', 'hookScore', 'retentionScore', 'shareabilityScore',
+                           'whyViral', 'viralCaption', 'hashtags', 'thumbnailText',
+                           'pinnedComment', 'captionStyle', 'aspectRatio', 'captionSegments',
+                           'favorite', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+                         incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                         isValidViralClip(incoming()) &&
+                         exists(/databases/$(database)/documents/users/$(userId)/projects/$(projectId));
+
+        allow update: if isOwner(userId) &&
+                         isValidId(projectId) &&
+                         isValidId(clipId) &&
+                         isValidViralClip(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().projectId == existing().projectId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                         (
+                           // Action: Edit clip metadata, trim bounds, captions, style, or favorite
+                           incoming().diff(existing()).affectedKeys().hasOnly([
+                             'hookTitle', 'startTimeSec', 'endTimeSec', 'viralScore', 'hookScore',
+                             'retentionScore', 'shareabilityScore', 'whyViral', 'viralCaption',
+                             'hashtags', 'thumbnailText', 'pinnedComment', 'captionStyle',
+                             'aspectRatio', 'captionSegments', 'favorite', 'updatedAt'
+                           ])
+                         );
+
+        allow delete: if isOwner(userId) && isValidId(projectId) && isValidId(clipId);
+      }
+    }
+
+    match /users/{userId}/hookDrafts/{draftId} {
+      allow get: if isOwner(userId) && isValidId(draftId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(draftId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll([
+                         'userId', 'topic', 'tone', 'generatedHooks', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'topic', 'tone', 'generatedHooks', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+                       incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                       isValidHookLabDraft(incoming());
+
+      allow update: if isOwner(userId) &&
+                       isValidId(draftId) &&
+                       isValidHookLabDraft(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'topic', 'tone', 'generatedHooks', 'updatedAt'
+                       ]);
+
+      allow delete: if isOwner(userId) && isValidId(draftId);
+    }
+  }
+}
